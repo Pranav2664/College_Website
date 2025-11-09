@@ -14,8 +14,11 @@ const upload = multer({
   dest: path.join(__dirname, 'uploads/')
 });
 
-// MongoDB connection
-mongoose.connect('mongodb://localhost:27017/college_demo', {
+// Load environment variables from .env
+require('dotenv').config();
+
+// MongoDB Atlas connection
+mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
@@ -57,8 +60,15 @@ app.post('/api/register', upload.single('photo'), async (req, res) => {
 
     res.status(200).json({ message: 'Registration successful!' });
   } catch (error) {
+    // Log detailed error information
     console.error('Registration error:', error);
-    res.status(500).json({ message: 'Registration failed', error });
+    if (error instanceof mongoose.Error) {
+      console.error('Mongoose error details:', error.message);
+    }
+    if (error.code === 'ENOENT') {
+      console.error('File upload error:', error);
+    }
+    res.status(500).json({ message: 'Registration failed', error: error.message || error });
   }
 });
 
